@@ -1,23 +1,7 @@
-import { OpenAI } from "openai";
 import { Message, Topic } from "../types";
 
-const getAIClient = () => {
-  const apiKey = import.meta.env.VITE_API_KEY || import.meta.env.API_KEY;
-  if (!apiKey) {
-    console.error("API Key is missing!");
-    // In a real app, handle this gracefully. For this template, we assume environment setup is correct.
-    throw new Error("Missing API Key");
-  }
-  return new OpenAI({
-    apiKey,
-    baseURL: "https://api.moonshot.cn/v1",
-    // Add timeout for network requests
-    timeout: 30000, // 30 seconds
-  });
-};
-
-// Model selection for Moonshot AI API
-const MODEL_NAME = 'moonshot-v1-8k'; // Using moonshot's standard model for compatibility
+// API endpoint for AI proxy
+const API_PROXY_URL = '/api/ai-proxy';
 
 export const generateCoachResponse = async (
   topic: Topic,
@@ -25,8 +9,6 @@ export const generateCoachResponse = async (
   userContext: string
 ): Promise<string> => {
   try {
-    const ai = getAIClient();
-    
     // Convert history to string format for context
     const conversationStr = history.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n');
 
@@ -61,13 +43,28 @@ export const generateCoachResponse = async (
     Reply in Chinese (Simplified).
     `;
 
-    const response = await ai.chat.completions.create({
-      model: MODEL_NAME,
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.7
+    const response = await fetch(API_PROXY_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt: prompt,
+        model: 'moonshot-v1-8k'
+      })
     });
 
-    return response.choices[0]?.message?.content || "抱歉，我暂时无法连接到思维网络，请稍后再试。";
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    return data.content || "抱歉，我暂时无法连接到思维网络，请稍后再试。";
   } catch (error) {
     console.error("Error generating coach response:", error);
     return "AI 教练正在思考中，请稍后...";
@@ -80,8 +77,6 @@ export const generateTopicSummary = async (
   userSummary: string
 ): Promise<string> => {
   try {
-    const ai = getAIClient();
-    
     const conversationStr = messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n');
 
     const prompt = `
@@ -106,13 +101,28 @@ export const generateTopicSummary = async (
     - Make it look like a professional, structured insight report.
     `;
 
-    const response = await ai.chat.completions.create({
-      model: MODEL_NAME,
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.7
+    const response = await fetch(API_PROXY_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt: prompt,
+        model: 'moonshot-v1-8k'
+      })
     });
 
-    return response.choices[0]?.message?.content || "无法生成总结。";
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    return data.content || "无法生成总结。";
   } catch (error) {
     console.error("Error generating summary:", error);
     return "生成总结失败。";
@@ -123,7 +133,6 @@ export const generateHolisticReport = async (
   allData: Record<string, { userSummary: string, aiSummary: string, topicTitle: string, moduleTitle: string }>
 ): Promise<string> => {
     try {
-        const ai = getAIClient();
         const dataStr = JSON.stringify(allData, null, 2);
 
         const prompt = `
@@ -148,13 +157,28 @@ export const generateHolisticReport = async (
         - Ensure high readability with clear spacing.
         `;
 
-        const response = await ai.chat.completions.create({
-            model: MODEL_NAME,
-            messages: [{ role: "user", content: prompt }],
-            temperature: 0.7
+        const response = await fetch(API_PROXY_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prompt: prompt,
+            model: 'moonshot-v1-8k'
+          })
         });
 
-        return response.choices[0]?.message?.content || "报告生成中...";
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        return data.content || "报告生成中...";
     } catch (error) {
         console.error(error);
         return "无法生成整体报告。";
