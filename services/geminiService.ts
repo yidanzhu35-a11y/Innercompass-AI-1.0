@@ -14,8 +14,8 @@ const getAIClient = () => {
   });
 };
 
-// Model selection for Kimi API
-const MODEL_NAME = 'kimi-k2-turbo-preview';
+// Model selection for Moonshot AI API
+const MODEL_NAME = 'moonshot-v1-8k'; // Using moonshot's standard model
 
 export const generateCoachResponse = async (
   topic: Topic,
