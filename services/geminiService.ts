@@ -55,6 +55,10 @@ export const generateCoachResponse = async (
     });
 
     if (!response.ok) {
+      // Check if it's a network error that might be due to regional restrictions
+      if (response.status >= 500) {
+        throw new Error('API服务可能在您所在地区受限，请尝试使用其他网络环境访问。');
+      }
       throw new Error(`API request failed with status ${response.status}`);
     }
 
@@ -67,7 +71,10 @@ export const generateCoachResponse = async (
     return data.content || "抱歉，我暂时无法连接到思维网络，请稍后再试。";
   } catch (error) {
     console.error("Error generating coach response:", error);
-    return "AI 教练正在思考中，请稍后...";
+    if (error.message.includes('网络')) {
+      return error.message;
+    }
+    return "AI 教练正在思考中，请稍后... 如果长时间无响应，请检查网络连接。";
   }
 };
 
