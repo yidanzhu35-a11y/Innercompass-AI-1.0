@@ -1,18 +1,21 @@
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+import { OpenAI } from "openai";
 import { Message, Topic } from "../types";
 
 const getAIClient = () => {
-  const apiKey = process.env.API_KEY;
+  const apiKey = import.meta.env.VITE_API_KEY;
   if (!apiKey) {
     console.error("API Key is missing!");
     // In a real app, handle this gracefully. For this template, we assume environment setup is correct.
     throw new Error("Missing API Key");
   }
-  return new GoogleGenAI({ apiKey });
+  return new OpenAI({
+    apiKey,
+    baseURL: "https://api.moonshot.cn/v1"
+  });
 };
 
-// Model selection based on instruction guidelines
-const MODEL_NAME = 'gemini-3-flash-preview';
+// Model selection for Kimi API
+const MODEL_NAME = 'kimi-k2-turbo-preview';
 
 export const generateCoachResponse = async (
   topic: Topic,
@@ -56,12 +59,13 @@ export const generateCoachResponse = async (
     Reply in Chinese (Simplified).
     `;
 
-    const response: GenerateContentResponse = await ai.models.generateContent({
+    const response = await ai.chat.completions.create({
       model: MODEL_NAME,
-      contents: prompt,
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.7
     });
 
-    return response.text || "抱歉，我暂时无法连接到思维网络，请稍后再试。";
+    return response.choices[0]?.message?.content || "抱歉，我暂时无法连接到思维网络，请稍后再试。";
   } catch (error) {
     console.error("Error generating coach response:", error);
     return "AI 教练正在思考中，请稍后...";
@@ -100,12 +104,13 @@ export const generateTopicSummary = async (
     - Make it look like a professional, structured insight report.
     `;
 
-    const response: GenerateContentResponse = await ai.models.generateContent({
+    const response = await ai.chat.completions.create({
       model: MODEL_NAME,
-      contents: prompt,
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.7
     });
 
-    return response.text || "无法生成总结。";
+    return response.choices[0]?.message?.content || "无法生成总结。";
   } catch (error) {
     console.error("Error generating summary:", error);
     return "生成总结失败。";
@@ -141,12 +146,13 @@ export const generateHolisticReport = async (
         - Ensure high readability with clear spacing.
         `;
 
-        const response: GenerateContentResponse = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview', // Using a stronger model for the final report
-            contents: prompt,
+        const response = await ai.chat.completions.create({
+            model: MODEL_NAME,
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7
         });
 
-        return response.text || "报告生成中...";
+        return response.choices[0]?.message?.content || "报告生成中...";
     } catch (error) {
         console.error(error);
         return "无法生成整体报告。";
