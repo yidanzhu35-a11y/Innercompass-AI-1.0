@@ -10,12 +10,14 @@ const getAIClient = () => {
   }
   return new OpenAI({
     apiKey,
-    baseURL: "https://api.moonshot.cn/v1"
+    baseURL: "https://api.moonshot.cn/v1",
+    // Add timeout for network requests
+    timeout: 30000, // 30 seconds
   });
 };
 
 // Model selection for Moonshot AI API
-const MODEL_NAME = 'moonshot-v1-8k'; // Using moonshot's standard model
+const MODEL_NAME = 'moonshot-v1-8k'; // Using moonshot's standard model for compatibility
 
 export const generateCoachResponse = async (
   topic: Topic,
