@@ -2,7 +2,7 @@ import { OpenAI } from "openai";
 import { Message, Topic } from "../types";
 
 const getAIClient = () => {
-  const apiKey = import.meta.env.VITE_API_KEY;
+  const apiKey = import.meta.env.VITE_API_KEY || import.meta.env.API_KEY;
   if (!apiKey) {
     console.error("API Key is missing!");
     // In a real app, handle this gracefully. For this template, we assume environment setup is correct.
