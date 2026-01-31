@@ -257,28 +257,45 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ module, topic, user, onSaveP
       {mode === 'chat' && (
         <>
           <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-slate-50 scrollbar-hide">
-            {messages.map((msg) => (
+            {messages.map((msg) => {
+              // Determine if this message is a predefined question (from divergingQuestions or initial prompts)
+              const isPredefinedQuestion = msg.role === 'assistant' && 
+                                    (topic.divergingQuestions.includes(msg.content) ||
+                                     msg.id.startsWith('init-'));
+              
+              return (
               <div
                 key={msg.id}
                 className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div
-                  className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-5 py-4 shadow-sm text-sm sm:text-base leading-relaxed prose max-w-none
-                    ${msg.role === 'user' 
-                      ? 'bg-primary-600 text-white rounded-br-none prose-invert' 
-                      : 'bg-white text-slate-800 border border-slate-100 rounded-bl-none prose-slate'
-                    }`}
-                >
-                  <ReactMarkdown 
-                    components={{
-                        p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />
-                    }}
+                <div className="flex items-start gap-2 max-w-[90%]">
+                  {/* Icon for different message types */}
+                  {msg.role === 'assistant' && !isPredefinedQuestion && (
+                    <div className="mt-1 text-lg flex-shrink-0">💡</div>
+                  )}
+                  {isPredefinedQuestion && (
+                    <div className="mt-1 text-lg flex-shrink-0">📓</div>
+                  )}
+                  
+                  <div
+                    className={`rounded-2xl px-5 py-4 shadow-sm text-sm sm:text-base leading-relaxed prose max-w-none
+                      ${msg.role === 'user' 
+                        ? 'bg-primary-600 text-white rounded-br-none prose-invert max-w-[85%] sm:max-w-[75%]' 
+                        : 'bg-white text-slate-800 border border-slate-100 rounded-bl-none prose-slate max-w-[85%] sm:max-w-[75%]'
+                      }`}
                   >
-                    {msg.content}
-                  </ReactMarkdown>
+                    <ReactMarkdown 
+                      components={{
+                          p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
             {isTyping && (
                <div className="flex justify-start w-full">
                  <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-none px-5 py-4 shadow-sm flex items-center gap-1">

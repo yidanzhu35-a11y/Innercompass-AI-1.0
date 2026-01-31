@@ -1,13 +1,27 @@
 import { Message, Topic } from "../types";
+import { mockGenerateCoachResponse } from "./mockService";
 
 // API endpoint for AI proxy
 const API_PROXY_URL = '/api/ai-proxy';
+
+// Check if we're in production environment
+const isProduction = process.env.NODE_ENV === 'production';
 
 export const generateCoachResponse = async (
   topic: Topic,
   history: Message[],
   userContext: string
 ): Promise<string> => {
+  // Use mock service in development to avoid API key issues
+  if (!isProduction) {
+    try {
+      return await mockGenerateCoachResponse();
+    } catch (error) {
+      console.error("Mock service error:", error);
+      return "AI 教练正在思考中，请稍后... 如果长时间无响应，请检查网络连接。";
+    }
+  }
+
   try {
     // Convert history to string format for context
     const conversationStr = history.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n');
@@ -78,11 +92,23 @@ export const generateCoachResponse = async (
   }
 };
 
+import { mockGenerateTopicSummary } from "./mockService";
+
 export const generateTopicSummary = async (
   topic: Topic,
   messages: Message[],
   userSummary: string
 ): Promise<string> => {
+  // Use mock service in development to avoid API key issues
+  if (!isProduction) {
+    try {
+      return await mockGenerateTopicSummary();
+    } catch (error) {
+      console.error("Mock service error:", error);
+      return "生成总结失败。";
+    }
+  }
+
   try {
     const conversationStr = messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n');
 
