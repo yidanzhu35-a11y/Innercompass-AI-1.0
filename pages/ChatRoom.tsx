@@ -284,13 +284,17 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ module, topic, user, onSaveP
                         : 'bg-white text-slate-800 border border-slate-100 rounded-bl-none prose-slate max-w-[85%] sm:max-w-[75%]'
                       }`}
                   >
-                    <ReactMarkdown 
-                      components={{
-                          p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />
-                      }}
-                    >
-                      {msg.content}
-                    </ReactMarkdown>
+                    {msg.role === 'user' ? (
+                      <div className="whitespace-pre-wrap">{msg.content}</div>
+                    ) : (
+                      <ReactMarkdown 
+                        components={{
+                            p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+                    )}
                   </div>
                 </div>
               </div>
