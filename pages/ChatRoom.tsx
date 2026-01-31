@@ -266,9 +266,9 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ module, topic, user, onSaveP
               return (
               <div
                 key={msg.id}
-                className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'} p-1`}
               >
-                <div className="flex items-start gap-2 max-w-[90%]">
+                <div className={`flex items-start gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   {/* Icon for different message types */}
                   {msg.role === 'assistant' && !isPredefinedQuestion && (
                     <div className="mt-1 text-lg flex-shrink-0">💡</div>
@@ -278,14 +278,14 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ module, topic, user, onSaveP
                   )}
                   
                   <div
-                    className={`rounded-2xl px-5 py-4 shadow-sm text-sm sm:text-base leading-relaxed prose max-w-none
+                    className={`rounded-2xl px-5 py-3 shadow-sm text-sm sm:text-base leading-relaxed prose max-w-none
                       ${msg.role === 'user' 
-                        ? 'bg-primary-600 text-white rounded-br-none prose-invert max-w-[85%] sm:max-w-[75%]' 
-                        : 'bg-white text-slate-800 border border-slate-100 rounded-bl-none prose-slate max-w-[85%] sm:max-w-[75%]'
+                        ? 'bg-primary-600 text-white rounded-br-none prose-invert max-w-[80%] sm:max-w-[65%]'
+                        : 'bg-white text-slate-800 border border-slate-100 rounded-bl-none prose-slate max-w-[80%] sm:max-w-[65%]'
                       }`}
                   >
                     {msg.role === 'user' ? (
-                      <div className="whitespace-pre-wrap">{msg.content}</div>
+                      <div className="break-words whitespace-normal">{msg.content}</div>
                     ) : (
                       <ReactMarkdown 
                         components={{
