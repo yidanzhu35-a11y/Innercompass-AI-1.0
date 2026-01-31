@@ -268,7 +268,7 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ module, topic, user, onSaveP
                 key={msg.id}
                 className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'} p-1`}
               >
-                <div className={`flex items-start gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`flex items-start gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}>
                   {/* Icon for different message types */}
                   {msg.role === 'assistant' && !isPredefinedQuestion && (
                     <div className="mt-1 text-lg flex-shrink-0">💡</div>
@@ -280,12 +280,12 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ module, topic, user, onSaveP
                   <div
                     className={`rounded-2xl px-5 py-3 shadow-sm text-sm sm:text-base leading-relaxed prose max-w-none
                       ${msg.role === 'user' 
-                        ? 'bg-primary-600 text-white rounded-br-none prose-invert max-w-[80%] sm:max-w-[65%]'
-                        : 'bg-white text-slate-800 border border-slate-100 rounded-bl-none prose-slate max-w-[80%] sm:max-w-[65%]'
+                        ? 'bg-primary-600 text-white rounded-br-none prose-invert w-auto min-w-[100px] max-w-[90%] sm:max-w-[85%]'
+                        : 'bg-white text-slate-800 border border-slate-100 rounded-bl-none prose-slate w-auto min-w-[100px] max-w-[90%] sm:max-w-[85%]'
                       }`}
                   >
                     {msg.role === 'user' ? (
-                      <div className="break-words whitespace-normal">{msg.content}</div>
+                      <div className="whitespace-pre-wrap break-words">{msg.content}</div>
                     ) : (
                       <ReactMarkdown 
                         components={{
