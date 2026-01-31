@@ -22,6 +22,8 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ module, topic, user, onSaveP
   const [mode, setMode] = useState<'chat' | 'summarize'>('chat');
   const [summaryInput, setSummaryInput] = useState('');
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [isButtonFlashing, setIsButtonFlashing] = useState(false);
+  const [hasButtonFlashed, setHasButtonFlashed] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
@@ -90,6 +92,38 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ module, topic, user, onSaveP
       summaryInputRef.current.style.height = `${summaryInputRef.current.scrollHeight}px`;
     }
   }, [summaryInput]);
+
+  // Detect when user sends first message and trigger button flash
+  useEffect(() => {
+    if (messages.length > 2 && !hasButtonFlashed) {
+      setHasButtonFlashed(true);
+      
+      // Create animation sequence for more noticeable flash effect
+      let animationStep = 0;
+      let isFlashing = true;
+      
+      setIsButtonFlashing(true);
+      
+      const animationInterval = setInterval(() => {
+        animationStep++;
+        
+        // Toggle flashing state every 300ms
+        if (animationStep % 2 === 0) {
+          setIsButtonFlashing(!isFlashing);
+          isFlashing = !isFlashing;
+        }
+        
+        if (animationStep >= 12) { // 6 flashes (12 steps)
+          clearInterval(animationInterval);
+          setIsButtonFlashing(false);
+        }
+      }, 150); // 150ms per step, total ~2s
+      
+      return () => {
+        clearInterval(animationInterval);
+      };
+    }
+  }, [messages.length, hasButtonFlashed]);
 
   const handleSendMessage = async () => {
     if (!input.trim()) return;
@@ -247,7 +281,18 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ module, topic, user, onSaveP
           </div>
         </div>
         {mode === 'chat' && messages.length > 2 && (
-          <Button size="sm" variant="outline" onClick={handleCompleteTopic}>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={handleCompleteTopic}
+            style={isButtonFlashing ? {
+              transition: 'all 0.1s ease',
+              boxShadow: '0 0 0 4px rgba(59, 130, 246, 0.6)',
+              transform: 'scale(1.05)'
+            } : {
+              transition: 'all 0.3s ease'
+            }}
+          >
             结束探索并总结
           </Button>
         )}
