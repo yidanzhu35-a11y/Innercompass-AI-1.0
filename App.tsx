@@ -5,7 +5,7 @@ import { ChatRoom } from './pages/ChatRoom';
 import { Report } from './pages/Report';
 import { Button } from './components/Button';
 import { APP_DATA } from './data';
-import { getCurrentUser, getUserData } from './services/authService';
+import { getCurrentUser, getUserData, updateUserData } from './services/authService';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 
@@ -112,7 +112,7 @@ const App: React.FC = () => {
     aiSummary: string, 
     isCompleted: boolean
   ) => {
-    if (!user) return;
+    if (!user || !user.uid) return;
     
     try {
       const newProgress = { ...user.progress };
@@ -123,9 +123,11 @@ const App: React.FC = () => {
         aiSummary
       };
       
+      // Update local state
       setUser({ ...user, progress: newProgress });
       
-      // Update in Firestore would go here
+      // Update in Firestore
+      await updateUserData(user.uid, { progress: newProgress });
     } catch (error) {
       console.error('Error saving progress:', error);
     }
