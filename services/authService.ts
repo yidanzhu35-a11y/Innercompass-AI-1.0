@@ -66,7 +66,14 @@ export const getUserData = async (userId: string) => {
   try {
     const userDoc = await getDoc(doc(db, 'users', userId));
     if (userDoc.exists()) {
-      return { id: userId, ...userDoc.data() } as UserData;
+      const userData = userDoc.data();
+      // Ensure the returned object conforms to UserData interface
+      return {
+        uid: userId,
+        username: userData.username || '',
+        email: userData.email || '',
+        progress: userData.progress || {},
+      } as UserData;
     } else {
       throw new Error('User data not found');
     }
