@@ -1,15 +1,22 @@
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
+  User 
+} from 'firebase/auth';
 import { auth, db } from '../firebase/config';
-import * as firebase from 'firebase/compat/app';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { UserData } from '../types';
 
 // Register user
 export const register = async (email: string, password: string, username: string) => {
   try {
-    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     
     // Store user data in Firestore
-    await db.collection('users').doc(user?.uid).set({
+    await setDoc(doc(db, 'users', user.uid), {
       username,
       email,
       createdAt: new Date().toISOString(),
@@ -26,7 +33,7 @@ export const register = async (email: string, password: string, username: string
 // Login user
 export const login = async (email: string, password: string) => {
   try {
-    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return userCredential.user;
   } catch (error) {
     console.error('Error logging in:', error);
@@ -37,7 +44,7 @@ export const login = async (email: string, password: string) => {
 // Logout user
 export const logout = async () => {
   try {
-    await auth.signOut();
+    await signOut(auth);
   } catch (error) {
     console.error('Error logging out:', error);
     throw error;
@@ -45,9 +52,9 @@ export const logout = async () => {
 };
 
 // Get current user
-export const getCurrentUser = (): Promise<firebase.User | null> => {
+export const getCurrentUser = (): Promise<User | null> => {
   return new Promise((resolve, reject) => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
       unsubscribe();
       resolve(user);
     }, reject);
@@ -57,8 +64,8 @@ export const getCurrentUser = (): Promise<firebase.User | null> => {
 // Get user data from Firestore
 export const getUserData = async (userId: string) => {
   try {
-    const userDoc = await db.collection('users').doc(userId).get();
-    if (userDoc.exists) {
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    if (userDoc.exists()) {
       return { id: userId, ...userDoc.data() } as UserData;
     } else {
       throw new Error('User data not found');
@@ -72,7 +79,7 @@ export const getUserData = async (userId: string) => {
 // Update user data in Firestore
 export const updateUserData = async (userId: string, data: Partial<UserData>) => {
   try {
-    await db.collection('users').doc(userId).update(data);
+    await updateDoc(doc(db, 'users', userId), data);
   } catch (error) {
     console.error('Error updating user data:', error);
     throw error;
