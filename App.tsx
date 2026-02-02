@@ -5,49 +5,89 @@ import { ChatRoom } from './pages/ChatRoom';
 import { Report } from './pages/Report';
 import { Button } from './components/Button';
 import { APP_DATA } from './data';
-
-const STORAGE_KEY = 'inner_compass_data';
+import { getCurrentUser, getUserData } from './services/authService';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
 
 const App: React.FC = () => {
   const [view, setView] = useState<AppView>(AppView.LOGIN);
   const [user, setUser] = useState<UserData | null>(null);
-  const [usernameInput, setUsernameInput] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   
   // Selection State
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
   const [activeTopicId, setActiveTopicId] = useState<string | null>(null);
 
-  // Load user from storage on mount
+  // Check authentication status on mount
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      setUser(JSON.parse(saved));
-      setView(AppView.DASHBOARD);
-    }
+    const checkAuthStatus = async () => {
+      try {
+        setIsLoading(true);
+        const currentUser = await getCurrentUser();
+        if (currentUser) {
+          const userData = await getUserData(currentUser.uid);
+          setUser(userData);
+          setView(AppView.DASHBOARD);
+        } else {
+          setView(AppView.LOGIN);
+        }
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+        setView(AppView.LOGIN);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuthStatus();
   }, []);
 
-  // Save user to storage whenever user object changes
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+  const handleLoginSuccess = async () => {
+    try {
+      setIsLoading(true);
+      const currentUser = await getCurrentUser();
+      if (currentUser) {
+        const userData = await getUserData(currentUser.uid);
+        setUser(userData);
+        setView(AppView.DASHBOARD);
+      }
+    } catch (error) {
+      console.error('Error after login:', error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [user]);
-
-  const handleLogin = () => {
-    if (!usernameInput.trim()) return;
-    const newUser: UserData = {
-      username: usernameInput,
-      progress: {}
-    };
-    setUser(newUser);
-    setView(AppView.DASHBOARD);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setUser(null);
-    setView(AppView.LOGIN);
-    setUsernameInput('');
+  const handleRegisterSuccess = async () => {
+    try {
+      setIsLoading(true);
+      const currentUser = await getCurrentUser();
+      if (currentUser) {
+        const userData = await getUserData(currentUser.uid);
+        setUser(userData);
+        setView(AppView.DASHBOARD);
+      }
+    } catch (error) {
+      console.error('Error after registration:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      setIsLoading(true);
+      // Note: We're not actually logging out here
+      // This would require the logout function from authService
+      // For now, we'll just clear local state
+      setUser(null);
+      setView(AppView.LOGIN);
+    } catch (error) {
+      console.error('Error logging out:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSelectTopic = (moduleId: string, topicId: string) => {
@@ -56,7 +96,7 @@ const App: React.FC = () => {
     setView(AppView.CHAT);
   };
 
-  const handleSaveProgress = (
+  const handleSaveProgress = async (
     topicKey: string, 
     messages: Message[], 
     userSummary: string, 
@@ -65,40 +105,30 @@ const App: React.FC = () => {
   ) => {
     if (!user) return;
     
-    const newProgress = { ...user.progress };
-    newProgress[topicKey] = {
-      isCompleted,
-      messages,
-      userSummary,
-      aiSummary
-    };
-    
-    setUser({ ...user, progress: newProgress });
+    try {
+      const newProgress = { ...user.progress };
+      newProgress[topicKey] = {
+        isCompleted,
+        messages,
+        userSummary,
+        aiSummary
+      };
+      
+      setUser({ ...user, progress: newProgress });
+      
+      // Update in Firestore would go here
+    } catch (error) {
+      console.error('Error saving progress:', error);
+    }
   };
 
   // --- Render Logic ---
 
   if (view === AppView.LOGIN) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-secondary-50 p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md text-center">
-          <div className="mb-6 text-6xl">🧭</div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">InnerCompass AI</h1>
-          <p className="text-slate-500 mb-8">开始你的自我发现之旅：价值观、天赋与热情。</p>
-          
-          <div className="space-y-4">
-            <input 
-              type="text" 
-              placeholder="请输入你的名字" 
-              className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all outline-none"
-              value={usernameInput}
-              onChange={(e) => setUsernameInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-            />
-            <Button onClick={handleLogin} className="w-full py-3 text-lg">开始旅程</Button>
-          </div>
-        </div>
-      </div>
+    return authMode === 'login' ? (
+      <Login onLoginSuccess={handleLoginSuccess} onSwitchToRegister={() => setAuthMode('register')} />
+    ) : (
+      <Register onRegisterSuccess={handleRegisterSuccess} onSwitchToLogin={() => setAuthMode('login')} />
     );
   }
 

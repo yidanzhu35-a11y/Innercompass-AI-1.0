@@ -38,6 +38,8 @@ export interface TopicState {
 
 export interface UserData {
   username: string;
+  email?: string;
+  uid?: string;
   progress: Record<string, TopicState>; // Key is composite "moduleId-topicId"
 }
 
