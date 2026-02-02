@@ -1,22 +1,15 @@
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  User 
-} from 'firebase/auth';
 import { auth, db } from '../firebase/config';
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import * as firebase from 'firebase/compat/app';
 import { UserData } from '../types';
 
 // Register user
 export const register = async (email: string, password: string, username: string) => {
   try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
     const user = userCredential.user;
     
     // Store user data in Firestore
-    await setDoc(doc(db, 'users', user.uid), {
+    await db.collection('users').doc(user?.uid).set({
       username,
       email,
       createdAt: new Date().toISOString(),
@@ -33,7 +26,7 @@ export const register = async (email: string, password: string, username: string
 // Login user
 export const login = async (email: string, password: string) => {
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await auth.signInWithEmailAndPassword(email, password);
     return userCredential.user;
   } catch (error) {
     console.error('Error logging in:', error);
@@ -44,7 +37,7 @@ export const login = async (email: string, password: string) => {
 // Logout user
 export const logout = async () => {
   try {
-    await signOut(auth);
+    await auth.signOut();
   } catch (error) {
     console.error('Error logging out:', error);
     throw error;
@@ -52,28 +45,23 @@ export const logout = async () => {
 };
 
 // Get current user
-export const getCurrentUser = (): Promise<User | null> => {
-  return new Promise((resolve) => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+export const getCurrentUser = (): Promise<firebase.User | null> => {
+  return new Promise((resolve, reject) => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
       unsubscribe();
       resolve(user);
-    });
+    }, reject);
   });
 };
 
 // Get user data from Firestore
-export const getUserData = async (userId: string): Promise<UserData> => {
+export const getUserData = async (userId: string) => {
   try {
-    const userDoc = await getDoc(doc(db, 'users', userId));
-    if (userDoc.exists()) {
-      const userData = userDoc.data() as UserData;
-      // Add uid to user data
-      return {
-        ...userData,
-        uid: userId
-      };
+    const userDoc = await db.collection('users').doc(userId).get();
+    if (userDoc.exists) {
+      return { id: userId, ...userDoc.data() } as UserData;
     } else {
-      throw new Error('User not found');
+      throw new Error('User data not found');
     }
   } catch (error) {
     console.error('Error getting user data:', error);
@@ -81,15 +69,12 @@ export const getUserData = async (userId: string): Promise<UserData> => {
   }
 };
 
-// Update user progress
-export const updateUserProgress = async (userId: string, topicId: string, progressData: any) => {
+// Update user data in Firestore
+export const updateUserData = async (userId: string, data: Partial<UserData>) => {
   try {
-    const userDoc = doc(db, 'users', userId);
-    await updateDoc(userDoc, {
-      [`progress.${topicId}`]: progressData
-    });
+    await db.collection('users').doc(userId).update(data);
   } catch (error) {
-    console.error('Error updating user progress:', error);
+    console.error('Error updating user data:', error);
     throw error;
   }
 };
