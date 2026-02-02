@@ -14,6 +14,7 @@ const App: React.FC = () => {
   const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authError, setAuthError] = useState<string | null>(null);
   
   // Selection State
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
@@ -46,14 +47,18 @@ const App: React.FC = () => {
   const handleLoginSuccess = async () => {
     try {
       setIsLoading(true);
+      setAuthError(null); // Clear any previous errors
       const currentUser = await getCurrentUser();
       if (currentUser) {
         const userData = await getUserData(currentUser.uid);
         setUser(userData);
         setView(AppView.DASHBOARD);
+      } else {
+        setAuthError('无法获取用户信息，请重试');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error after login:', error);
+      setAuthError(error.message || '登录后处理失败，请重试');
     } finally {
       setIsLoading(false);
     }
@@ -62,14 +67,18 @@ const App: React.FC = () => {
   const handleRegisterSuccess = async () => {
     try {
       setIsLoading(true);
+      setAuthError(null); // Clear any previous errors
       const currentUser = await getCurrentUser();
       if (currentUser) {
         const userData = await getUserData(currentUser.uid);
         setUser(userData);
         setView(AppView.DASHBOARD);
+      } else {
+        setAuthError('无法获取新注册的用户信息，请重试');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error after registration:', error);
+      setAuthError(error.message || '注册后处理失败，请重试');
     } finally {
       setIsLoading(false);
     }
@@ -125,10 +134,21 @@ const App: React.FC = () => {
   // --- Render Logic ---
 
   if (view === AppView.LOGIN) {
-    return authMode === 'login' ? (
-      <Login onLoginSuccess={handleLoginSuccess} onSwitchToRegister={() => setAuthMode('register')} />
-    ) : (
-      <Register onRegisterSuccess={handleRegisterSuccess} onSwitchToLogin={() => setAuthMode('login')} />
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="w-full max-w-md">
+          {authError && (
+            <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg text-center">
+              {authError}
+            </div>
+          )}
+          {authMode === 'login' ? (
+            <Login onLoginSuccess={handleLoginSuccess} onSwitchToRegister={() => setAuthMode('register')} />
+          ) : (
+            <Register onRegisterSuccess={handleRegisterSuccess} onSwitchToLogin={() => setAuthMode('login')} />
+          )}
+        </div>
+      </div>
     );
   }
 
