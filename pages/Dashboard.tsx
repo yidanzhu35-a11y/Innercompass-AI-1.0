@@ -1,6 +1,6 @@
 import React from 'react';
 import { APP_DATA } from '../data';
-import { Module, UserData } from '../types';
+import { Module, UserData, Message } from '../types';
 import { Button } from '../components/Button';
 
 interface DashboardProps {
@@ -16,6 +16,69 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onSelectTopic, onVie
   const completedTopics = Object.values(user.progress).filter(p => p.isCompleted).length;
   const progressPercent = Math.round((completedTopics / totalTopics) * 100);
 
+  // Export exploration records to TXT
+  const handleExportRecords = () => {
+    let exportContent = `InnerCompass AI 探索记录\n`;
+    exportContent += `=================================\n`;
+    exportContent += `导出时间: ${new Date().toLocaleString('zh-CN')}\n`;
+    exportContent += `探索用户: ${user.username}\n`;
+    exportContent += `完成议题: ${completedTopics}/${totalTopics}\n`;
+    exportContent += `=================================\n\n`;
+
+    // Export module by module
+    APP_DATA.forEach(module => {
+      exportContent += `【${module.icon} ${module.title}】\n`;
+      exportContent += `${module.description}\n\n`;
+
+      module.topics.forEach(topic => {
+        const topicKey = `${module.id}-${topic.id}`;
+        const progress = user.progress[topicKey];
+
+        if (progress) {
+          exportContent += `  ◆ ${topic.title}\n`;
+          exportContent += `  ${topic.mainPrompt}\n\n`;
+
+          // Export messages
+          if (progress.messages && progress.messages.length > 0) {
+            exportContent += `  对话记录:\n`;
+            progress.messages.forEach((msg) => {
+              const sender = msg.role === 'user' ? '你' : 'AI';
+              exportContent += `  ${sender}: ${msg.content.replace(/\n/g, ' ')}\n`;
+            });
+            exportContent += `\n`;
+          }
+
+          // Export summaries
+          if (progress.isCompleted && (progress.userSummary || progress.aiSummary)) {
+            if (progress.userSummary) {
+              exportContent += `  你的总结:\n`;
+              exportContent += `  ${progress.userSummary}\n\n`;
+            }
+            if (progress.aiSummary) {
+              exportContent += `  AI总结:\n`;
+              exportContent += `  ${progress.aiSummary.replace(/\n/g, ' ')}\n\n`;
+            }
+          }
+
+          exportContent += `  ---------------------------------\n\n`;
+        }
+      });
+
+      exportContent += `=================================\n\n`;
+    });
+
+    // Create and download TXT file
+    const blob = new Blob([exportContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `InnerCompass-探索记录-${user.username}-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="h-full flex flex-col bg-slate-50 overflow-y-auto">
       {/* Header */}
@@ -28,9 +91,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onSelectTopic, onVie
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={onLogout}>退出</Button>
             {completedTopics > 0 && (
-              <Button variant="secondary" size="sm" onClick={onViewReport}>
-                查看个人总结
-              </Button>
+              <>
+                <Button variant="secondary" size="sm" onClick={handleExportRecords}>
+                  导出探索记录
+                </Button>
+                <Button variant="secondary" size="sm" onClick={onViewReport}>
+                  查看个人总结
+                </Button>
+              </>
             )}
           </div>
         </div>
